@@ -1,8 +1,8 @@
 // ideas for the new wave:
 // allow loss seeking: 27% is willing to take a +5000 -5000 50/50 gamble
 // idea: to compare distrubution of answers for 2 versions of Ariadna data
-
-clear all
+ssc install tabstatmat
+clear all 
 capture cd "G:\Shared drives\Koronawirus\studies\5 common data cleaning (Ariadna data)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\5 common data cleaning (Ariadna data)"
 use data_stata_format.dta, clear
@@ -11,15 +11,6 @@ do common_data_cleaning.do
 capture cd "G:\Shared drives\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
 
-//XXX to remove too fast and too slow participants, e.g. fastest (5%) slowest (1%)
-// define variable that slows percentile, by time
-sort time
-//use it later during the robustness check, when results will be ready (add/remove 5% fastest participants)
-
-//info in wrong columns, pls check for more such cases!
-//what about mean? which wrong columns?
-//replace v_decision=P390 if v_decision==""
-//RK: pls elaborate on above in details, I dont undesrtand these lines. I double checked, all is fine with columns
 
 global uwagi "p1_uwagi p2_uwagi p5_uwagi p6_uwagi p9_uwagi p10_uwagi p13_uwagi p14_uwagi"
 foreach uw in $uwagi {
@@ -38,7 +29,7 @@ destring `x', replace
 
 global order_puzzles "order_puzzles1 order_puzzles2 order_puzzles3 order_puzzles4 order_puzzles5 order_puzzles6 order_puzzles7 order_puzzles8"
 global wealth "wealth_low wealth_high"
-global demogr "male age i.city_population secondary_edu higher_edu $wealth health_poor health_good had_covid  covid_friends religious i.religious_freq status_unemployed status_pension status_student"
+global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good had_covid  covid_friends religious i.religious_freq status_unemployed status_pension status_student"
 global demogr_int "male age higher_edu"
 global treatments "t_cold t_unempl"
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
@@ -57,7 +48,7 @@ global order_puzzles "order_puzzles1 order_puzzles2 order_puzzles3 order_puzzles
 //PUZZLES DATA CLEANING
 // [P1] Przypuśćmy, że 15% obywateli Polski jest zakażonych koronawirusem, a 85% jest zdrowych. Test mający wykryć koronawirusa na wczesnym etapie ma skuteczność 80%, tzn., gdy zbada się osobę faktycznie zakażoną, to jest 80% szans na to, że test wykaże, że jest zakażona, a 20% że zdrowa. Gdy zbada się osobę faktycznie zdrową, jest 80% szans, że test wykaże, że jest zdrowa, a 20% że zakażona.
 //normative answer: ...
-gen base_rate_negl_normative=p1>=19& p1<=51 //let's have +-10% from normative answer 
+gen base_rate_negl_normative=p1>=19& p1<=51 //Raman says: let's have +-10% from normative answer. MK has doubts, see e=mail March 4
 tab base_rate_negl_normative
 tab p1_uwagi
 
@@ -70,12 +61,7 @@ mniej zaniepokojona(-y)
 */
 //normative answer: current rate of infection is 3-4% so 1% should make us less worried
 capture drop beliefs_update_normative
-gen beliefs_update_normative=0
-replace beliefs_update_normative=1 if p2==2 & p13==2 
-tab beliefs_update_normative
-tab p2_uwagi
-tab p13_uwagi
-
+gen beliefs_update_normative=p2==p13
 /*
 Władze pewnego miasta przygotowują się do konfrontacji z nową falą pandemii. Można się spodziewać, że zabije ona ok. 600 mieszkańców. Rozważane są dwa programy prewencyjne. Epidemiolodzy szacują, że ich skutki dla tych statystycznych 600 osób będą następujące:
 Program A: 200 osób zostanie uratowanych
@@ -100,7 +86,6 @@ gen asian_disease_neg_framing=asian_disease_option==2
 gen asian_disease_sure_option=p5==1
 gen asian_disease_unsure_option=p5==2
 tab asian_disease_pos_framing asian_disease_sure_option
-ttest asian_disease_sure_option, by(asian_disease_pos_framing)
 
 //Śmiertelność wśród pacjentów z koronawirusem zależy od ich wieku. Załóżmy, że oszacowane prawdopodobieństwo śmierci w ciągu miesiąca od zakażenia dla mężczyzn w poszczególnych grupach wiekowych kształtuje się następująco:
 //Jan ma 61 lat. Jak myślisz, jakie jest prawdopodobieństwo, że Jan umrze w ciągu miesiąca od zakażenia? 
@@ -166,6 +151,7 @@ tab p14_uwagi
 //generating performance
 // MK: what is that? why not egen performance=rsum($normative)? also, wouldn't be more informative to look at mean, not sum?
 // RK: because I donk know all STATA commands that you know :) these comments are not productive, lets just change code
+// MK: well, this one works, so no problem. Just wanted to make sure that I understand what's happenning here?
 sum *_normative
 global normative "base_rate_negl_normative death_prob_normative beliefs_update_normative compound_non_nonsense lilypad_normative"
 gen performance = 0
@@ -178,29 +164,56 @@ replace performance = performance/counter
 sum performance 
 
 foreach x in $normative {
+display "`x'"
+format `x' %12.2fc
 kwallis `x', by(treatment)
  }
+bysort treatment: ttest asian_disease_sure_option, by(asian_disease_pos_framing)
 
-tabstat $normative loss_ave, statistics( mean ) by(treatment)
+
+set varabbrev on, permanently
+tabstat $normative loss_ave, by(treatment) statistics( mean ) format(%12.2f) save
+
+tabstatmat temp
+matrix temp = temp'
+mat li temp, noheader format(%12.2f)
+
+
 
 //short answer if want to be vaccinated or not
-gen v_decision_yes=v_decision==3|v_decision==4
+// gen v_decision_yes=v_decision==3|v_decision==4
 
 //fear determinants
-ologit e_fear $demogr 
+quietly ologit e_fear $treatments
 est store m_0
-ologit e_fear $demogr $treatments 
+quietly ologit e_fear $treatments $demogr
 est store m_1
-ologit e_fear $demogr $health_advice $treatments v_decision_yes $risk $worry $voting $control $informed conspiracy_score $covid_impact
+quietly ologit e_fear $treatments $demogr $health_advice  $risk $worry $voting $control $informed conspiracy_score $covid_impact
 est store m_2
 est table m_0 m_1 m_2, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 
+//other emo determinants
+foreach x in $emotions {
+display "`x'"
+ologit `x' $treatments 
+est store `x'
+}
+est table $emotions, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+
+tabstat $emotions, by(treatment) statistics( mean sd) format(%12.2f)
+
+tabstat $emotions, by(treatment) statistics( mean) save nototal save
+
+tabstatmat temp
+matrix temp = temp'
+mat li temp, noheader format(%12.2f)
+
 //performance determinants (with order effects)
-ologit performance $demogr
+ologit performance $treatments $demogr
 est store m_0
-ologit performance $demogr $treatments $emotions 
+ologit performance $treatments $demogr $emotions 
 est store m_1
-ologit performance $demogr $treatments $emotions v_decision_yes $risk $worry $voting $control $informed conspiracy_score $covid_impact $order_puzzles
+ologit performance $treatments $demogr $emotions v_decision_yes $risk $worry $voting $control $informed conspiracy_score $covid_impact $order_puzzles
 est store m_2
 est table m_0 m_1 m_2, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 //no order effect of vars "order_puzzles_..."
@@ -213,3 +226,9 @@ est store m_1
 ologit performance $demogr $treatments $emotions v_decision_yes $risk $worry $voting $control $informed conspiracy_score $covid_impact 
 est store m_2
 est table m_0 m_1 m_2, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+
+
+foreach x in $normative {
+display "`x'"
+ologit `x' $treatments $demogr $emotions
+}
