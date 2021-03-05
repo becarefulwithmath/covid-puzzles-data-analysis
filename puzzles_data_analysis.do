@@ -132,8 +132,9 @@ replace loss_aversion=((loss_aversion-6)*1000+4500)/5000
 //[P11] Załóżmy, że jesteś teraz zdrowy/a- nie masz koronawirusa. Spotykasz 100 osób. Przy każdym spotkaniu, które rozpoczynasz będąc zdrowy/a, masz 99,5% szans na to, że pozostaniesz zdrowy/a (nie zostaniesz zakażony/a koronawirusem). 
 //Jakie jest prawdopodobieństwo, że pozostaniesz zdrowy/a po ostatnim ze 100 spotkań?
 //normative answer: ...
-gen compound_prob_normative=p10>=60& p10<=66
-replace compound_prob_normative=1 if p10>=0.60& p10<=0.66
+capture drop compound_prob_norm
+gen compound_prob_normative=p10>=40& p10<=80
+
 tab compound_prob_normative
 capture drop compound_nonsense
 gen compound_nonsense = p10==99.5
@@ -153,7 +154,7 @@ tab p14_uwagi
 // RK: because I donk know all STATA commands that you know :) these comments are not productive, lets just change code
 // MK: well, this one works, so no problem. Just wanted to make sure that I understand what's happenning here?
 sum *_normative
-global normative "base_rate_negl_normative death_prob_normative beliefs_update_normative compound_non_nonsense lilypad_normative"
+global normative "base_rate_negl_normative death_prob_normative beliefs_update_normative compound_prob_normative lilypad_normative"
 gen performance = 0
 gen counter = 0
 foreach x in $normative {
@@ -172,7 +173,8 @@ bysort treatment: ttest asian_disease_sure_option, by(asian_disease_pos_framing)
 
 
 set varabbrev on, permanently
-tabstat $normative loss_ave, by(treatment) statistics( mean ) format(%12.2f) save
+tabstat $normative loss_ave, by(treatment) statistics( mean ) format(%12.2f) nototal save
+tabstat $normative loss_ave, by(treatment) statistics( mean sd ) format(%12.2f) 
 
 tabstatmat temp
 matrix temp = temp'
@@ -202,7 +204,7 @@ est table $emotions, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 
 tabstat $emotions, by(treatment) statistics( mean sd) format(%12.2f)
 
-tabstat $emotions, by(treatment) statistics( mean) save nototal save
+tabstat $emotions, by(treatment) statistics( mean) save nototal
 
 tabstatmat temp
 matrix temp = temp'
@@ -223,12 +225,12 @@ ologit performance $demogr
 est store m_0
 ologit performance $demogr $treatments $emotions 
 est store m_1
-ologit performance $demogr $treatments $emotions v_decision_yes $risk $worry $voting $control $informed conspiracy_score $covid_impact 
+ologit performance $demogr $treatments $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact 
 est store m_2
 est table m_0 m_1 m_2, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 
-
+ologit compound_prob_normative $demogr
 foreach x in $normative {
 display "`x'"
-ologit `x' $treatments $demogr $emotions
+ologit `x'  $demogr
 }
