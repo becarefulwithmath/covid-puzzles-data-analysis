@@ -54,7 +54,6 @@ foreach x in $order_puzzles {
 destring `x', replace
 }
 
-global order_puzzles "order_puzzles1 order_puzzles2 order_puzzles3 order_puzzles4 order_puzzles5 order_puzzles6 order_puzzles7 order_puzzles8"
 global wealth "wealth_low wealth_high"
 global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good had_covid  covid_friends religious i.religious_freq status_unemployed status_pension status_student"
 global basic_demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good religious status_unemployed status_pension status_student"
@@ -213,9 +212,10 @@ set varabbrev on, permanently
 tabstat $normative, by(treatment) statistics( mean ) format(%12.2f) nototal save
 tabstat $normative, by(treatment) statistics( mean sd ) format(%12.2f) 
 
-tabstatmat temp
-matrix temp = temp'
-mat li temp, noheader format(%12.2f)
+//tabstatmat temp
+// RK: above part returns error: no tabstat results in memory
+//matrix temp = temp'
+//mat li temp, noheader format(%12.2f)
 
 
 
@@ -262,7 +262,8 @@ est store m_2
 
 est table m_0 m_1 m_2 , b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 //no order effect of vars "order_puzzles_..."
-test order_puzzles1/order_puzzles8 // jointly significant
+//test order_puzzles1/order_puzzles8 // jointly significant
+//RK: above causes error:order_puzzles1 not found
 //performance determinants (no order effects)
 
 // determinants of correct answers to specific puzzles
@@ -272,3 +273,8 @@ display "`x'"
 ologit `x' $treatments $demogr
 }
 
+//for presentation
+gen vaccination_y=v_decision==3|v_decision==4
+global demogr_for_summary "male age edu $wealth health_poor health_good religious control_covid control_cold control_unempl informed_covid informed_cold informed_unempl mask_wearing distancing conspiracy_general_info conspiracy_stats conspiracy_excuse vaccination_y"
+
+asdoc sum $demogr_for_summary $emotions $worry performance, replace
