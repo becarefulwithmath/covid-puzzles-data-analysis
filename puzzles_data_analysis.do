@@ -1,8 +1,3 @@
-// ideas for the new wave:
-// allow loss seeking: 27% is willing to take a +5000 -5000 50/50 gamble
-// explicite measure of rational vs. experiential decision making style?
-// more questions about behavior: Czy w którymś momencie pandemii zgromadziłeś znaczne zapasy żywności lub innych produktów na wypadek ich niedostępności w sklepach?
-// itp. 
 
 
 ssc install tabstatmat
@@ -209,13 +204,12 @@ bysort treatment: ttest asian_disease_sure_option, by(asian_disease_pos_framing)
 
 
 set varabbrev on, permanently
-tabstat $normative, by(treatment) statistics( mean ) format(%12.2f) nototal save
 tabstat $normative, by(treatment) statistics( mean sd ) format(%12.2f) 
+tabstat $normative, by(treatment) statistics( mean ) format(%12.2f) nototal save
 
-//tabstatmat temp
-// RK: above part returns error: no tabstat results in memory
-//matrix temp = temp'
-//mat li temp, noheader format(%12.2f)
+tabstatmat temp
+matrix temp = temp'
+mat li temp, noheader format(%12.2f)
 
 
 
@@ -278,3 +272,10 @@ gen vaccination_y=v_decision==3|v_decision==4
 global demogr_for_summary "male age edu $wealth health_poor health_good religious control_covid control_cold control_unempl informed_covid informed_cold informed_unempl mask_wearing distancing conspiracy_general_info conspiracy_stats conspiracy_excuse vaccination_y"
 
 asdoc sum $demogr_for_summary $emotions $worry performance, replace
+
+
+// figures
+ cdfplot loss_aversion, by(treat) opt1( lc(red green olive) ) opt2( lp(dash dash dash) )
+ cdfplot p1, by(treat) opt1( lc(red green olive) ) opt2( lp(dash dash dash) )
+ cdfplot p6, by(treat) opt1( lc(red green olive) ) opt2( lp(dash dash dash) )
+ cdfplot p10, by(treat) opt1( lc(red green olive) ) opt2( lp(dash dash dash) )
