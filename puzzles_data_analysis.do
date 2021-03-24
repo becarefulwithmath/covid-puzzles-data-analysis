@@ -4,11 +4,13 @@ ssc install tabstatmat
 clear all 
 capture cd "G:\Shared drives\Koronawirus\studies\5 common data cleaning (Ariadna data)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\5 common data cleaning (Ariadna data)"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/5 common data cleaning (Ariadna data)"
 use data_stata_format.dta, clear
 do common_data_cleaning.do
 
 capture cd "G:\Shared drives\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/4 puzzles (actual full study)"
 
 
 // comments
