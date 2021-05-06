@@ -1,5 +1,6 @@
 
-
+/*   MK_szczep    <- wszystkie komentarze z tym dopiskiem to rzeczy które musiałem wykomentowac by przeszedl
+// i liczyl nam performance dla potrzeb analizy danych szczepionkowych. analizujac puzzles zapewne trzeba je od-komentować 
 ssc install tabstatmat
 clear all 
 capture cd "G:\Shared drives\Koronawirus\studies\5 common data cleaning (Ariadna data)"
@@ -11,7 +12,7 @@ do common_data_cleaning.do
 capture cd "G:\Shared drives\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\4 puzzles (actual full study)\data analysis"
 capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/4 puzzles (actual full study)"
-
+*/
 
 // comments
 global uwagi "p1_uwagi p2_uwagi p5_uwagi p6_uwagi p9_uwagi p10_uwagi p13_uwagi p14_uwagi"
@@ -20,6 +21,7 @@ display "`uw'"
 tab `uw' // najwięcej do p5--asian_disease
 }
 
+/*  MK_szczep
 global uw_categories "p1_uw_ p2_uw_c p5_uw_ p6_uw_ p9_uw_ p10_uw_ p13_uw_ p14_uw_"
 foreach uw in $uw_categories {
 display "`uw'"
@@ -38,7 +40,7 @@ tabulate treatment p9_uw_c, chi2
 
 egen number_comments = rownonmiss(*uwag*) , strok 
 bysort treat: sum number_comments
-
+*/
 
 
 //to add later into puzzles regression
@@ -67,12 +69,14 @@ global health_advice "mask_wearing distancing"
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 global order_puzzles "order_puzzles1 order_puzzles2 order_puzzles3 order_puzzles4 order_puzzles5 order_puzzles6 order_puzzles7 order_puzzles8"
 
+
+/* MK_szczep
 gen c_had_covid=t_covid*had_covid
 gen c_worry_covid=t_covid*worry_covid
 gen c_control_covid=t_covid*control_covid
 gen c_poor_health=t_covid*health_poor
 global covid_int "worry_covid control_covid c_worry_covid c_control_covid health_poor c_poor_health"
-
+*/
 
 
 //PUZZLES DATA CLEANING
@@ -182,10 +186,8 @@ tab lilypad_normative
 tab p14_uwagi
 
 //generating performance
-// MK: what is that? why not egen performance=rsum($normative)? also, wouldn't be more informative to look at mean, not sum?
-// RK: because I donk know all STATA commands that you know :) these comments are not productive, lets just change code
-// MK: well, this one works, so no problem. Just wanted to make sure that I understand what's happenning here?
-sum *_normative
+
+/*sum *_normative
 global normative "base_rate_negl_normative death_prob_normative beliefs_update_normative compound_prob_normative lilypad_normative"
 gen performance = 0
 gen counter = 0
@@ -195,6 +197,13 @@ foreach x in $normative {
 }
 replace performance = performance/counter
 sum performance 
+*/
+sum *_normative
+egen performance=rmean(*_normative)
+
+
+capture rename warunek treatment
+/* MK_szczep
 
 foreach x in $normative {
 display "`x'"
